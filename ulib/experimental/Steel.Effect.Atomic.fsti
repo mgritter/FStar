@@ -120,7 +120,6 @@ let bind_ens (#a:Type) (#b:Type)
   (_:squash (can_be_split_post (fun x y -> post_g x y `star` frame_g x) post))
 : ens_t (pre_f `star` frame_f) b post
 = fun m0 y m2 ->
-  req_f (focus_rmem m0 pre_f) /\
   (exists (x:a) (h1:hmem (post_f x `star` frame_f)).
     pr x /\
     (
@@ -345,7 +344,7 @@ let bind_pure_steel__ens (#a:Type) (#b:Type)
   (wp:pure_wp a)
   (#pre:pre_t) (#post:post_t b) (ens:a -> ens_t pre b post)
 : ens_t pre b post
-= fun m0 r m1 -> as_requires wp /\ (exists (x:a). as_ensures wp x /\ ((ens x) m0 r m1))
+= fun m0 r m1 -> exists (x:a). as_ensures wp x /\ ((ens x) m0 r m1)
 
 /// The composition combinator
 val bind_pure_steela_ (a:Type) (b:Type)
