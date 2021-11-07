@@ -33,12 +33,62 @@ errors = set()
 
 print( f"Generating documentation for {len(sources)} files." )
 
+introductions = {}
+
+def infer_introduction( module, md ):
+    # Split back into lines -- FIXME
+    lines = md.split("\n" )
+    try:
+        headerLoc = lines.index( f"# {module}" )
+    except ValueError:
+        return
+
+    # Find the introductory section prefixed with '> '
+    # after the module definition (possibly after a copyright notice.)
+    
+    firstParagraph = ""
+    for l in lines[headerLoc + 1:]:
+        # skip blank lines
+        if l == "":
+            continue
+        
+        # skip blank lines, if no paragraph, otherwise end
+        if l.rstrip() == ">":
+            if firstParagraph == "":
+                continue
+            else:
+                break
+            
+        if l.startswith( "> " ):
+            firstParagraph += " "
+            firstParagraph += l[2:] 
+            continue
+
+        # unknown start of line, skip
+        break
+    
+    if firstParagraph == "":
+        return
+
+    try:
+        firstPeriod = firstParagraph.index( ". " )
+        # hack, replace the search with a regexp
+        while firstParagraph[firstPeriod-3:firstPeriod+1] == "i.e.":
+            firstPeriod = firstParagraph.index( ". ", firstPeriod + 1 )
+        firstSentence = firstParagraph[:firstPeriod+1]
+    except ValueError:
+        firstSentence = firstParagraph
+
+    introductions[module] = firstSentence
+    
 for s in sources:
     try:
         with open( os.path.join( ulib_base, s ), "r" ) as fstar_in:        
             with open( os.path.join( md_base, change_suffix( s, "md" ) ), "w" ) as md_out:
                 fst = fstar_in.read()
-                md_out.write( fstardoc.fst2md( fst ) )
+                md = fstardoc.fst2md( fst )
+                md_out.write( md )
+                infer_introduction( baseName( s ), md ) 
     except AssertionError as e:
         firstLine = e.args[0].split( '\n' )[0]
         secondLine = e.args[0].split( '\n' )[1]
@@ -49,9 +99,15 @@ for s in sources:
 sources.difference_update( errors )
 
 with open( os.path.join( md_base, "index.md" ), "w" ) as index_out:
+    index_out.write( "# F* standard library modules" )
     for s in sorted( sources, key=baseName ):
         n = baseName( s )
-        index_out.write( f"[{n}]({n}.html)\n\n" )
+        try:
+            intro = introductions[n]
+            index_out.write( f"[{n}]({n}.html) -- {intro}\n\n" )
+        except KeyError:
+            index_out.write( f"[{n}]({n}.html)\n\n" )
+            
 
 sources.add( "index.md" )
 
