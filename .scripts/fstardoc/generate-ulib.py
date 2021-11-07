@@ -23,9 +23,11 @@ def change_suffix( fn, suffix ):
 
 sources = set( os.path.basename( s ) for s in interface_sources )
 sources.update( os.path.basename( s ) for s in impl_sources
-                if change_suffix( s, "fsti" ) not in sources )
+                if change_suffix( os.path.basename(s), "fsti" ) not in sources )
 
 errors = set()
+
+print( f"Generating documentation for {len(sources)} files." )
 
 for s in sources:
     try:
