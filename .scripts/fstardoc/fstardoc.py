@@ -167,24 +167,36 @@ class fst_parsed:
             # The module definition itself should appear as a header, but not as code.
             if ' ' not in line[len('module '):]:
                 self.output.extend(['# ' + line[len('module '):], ''])
-                return True 
-            # Otherwise it's an alias? Leave those as code for now.
+                return True
+
+            # Is it an alias?  Link it if so.
+            if '=' in line:
+                parts = line.split( "=" )
+                alias = parts[0][len('module '):]
+                other = parts[1].rstrip()
+            self.output.extend([f"* Aliases module [{other}]({other}.html) as `{alias}`"])
+            return True
+                
+
+            # Otherwise, given up
             return False
         
         if line.startswith('open ') and ' ' not in line[len('open ')]:
             # Add as a dependency
             # TODO: sort these after any includes
             openedModule = line[len('open '):]
-            self.output.extend([f"* Opens module [{openedModule}]({openedModule}.html)]", ''])
+            self.output.extend([f"* Opens module [{openedModule}]({openedModule}.html)"])
             return True
         
         if line.startswith('include ') and ' ' not in line[len('include ')]:
             # TODO: show everything in this document?
             # For now, link to it
             includedModule = line[len('include '):]
-            self.output.extend([f"* Includes module [{includedModule}]({includedModule}.html)]", ''])
+            self.output.extend([f"* Includes module [{includedModule}]({includedModule}.html)"])
             return True
-        
+
+        return False
+    
     def add_line(self, line):
         if '\n' in line:
             self.error("Newline in line", line)
