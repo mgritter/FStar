@@ -40,9 +40,9 @@ def fsdoc_code_conv(c):
     pos_start = None
     for i, l in enumerate(c):
         if '{[' in l and ']}' in l:
-            c[i] = l.replace('{[', '```fstar').replace(']}', '```')
+            c[i] = l.replace('{[', '```FStar').replace(']}', '```')
         elif '{[' in l:
-            c[i] = l.replace('{[', '```fstar')
+            c[i] = l.replace('{[', '```FStar')
             pos_start = i + 1
         elif ']}' in l:
             c[i] = l.replace(']}', '```')
@@ -82,7 +82,7 @@ class fst_parsed:
 
     def _flush_code(self):
         if len(self.current_code) > 0:
-            self.output.append('```fstar')
+            self.output.append('```FStar')
             self.output.extend(self.current_code)
             self.output.append('```')
             self.current_code = []
@@ -161,11 +161,35 @@ class fst_parsed:
             self.flush()
             self.current_comment_type = typ
 
+
+    def is_module_crossref( self, line ):
+        if line.startswith('module '):
+            # The module definition itself should appear as a header, but not as code.
+            if ' ' not in line[len('module '):]:
+                self.output.extend(['# ' + line[len('module '):], ''])
+                return True 
+            # Otherwise it's an alias? Leave those as code for now.
+            return False
+        
+        if line.startswith('open ') and ' ' not in line[len('open ')]:
+            # Add as a dependency
+            # TODO: sort these after any includes
+            openedModule = line[len('open '):]
+            self.output.extend([f"* Opens module [{openedModule}]({openedModule}.html)]", ''])
+            return True
+        
+        if line.startswith('include ') and ' ' not in line[len('include ')]:
+            # TODO: show everything in this document?
+            # For now, link to it
+            includedModule = line[len('include '):]
+            self.output.extend([f"* Includes module [{includedModule}]({includedModule}.html)]", ''])
+            return True
+        
     def add_line(self, line):
         if '\n' in line:
             self.error("Newline in line", line)
-        if line.startswith('module ') and ' ' not in line[len('module '):]:
-            self.output.extend(['# ' + line[len('module '):], ''])
+        if self.is_module_crossref( line ):
+            return
         if self.comment_nest_level > 0:
             nest_level = self.comment_nest_level - line.count('*)')
             if nest_level > 0:
@@ -275,7 +299,7 @@ class fst_parsed:
         for k in self.symbols:
             for i, l in enumerate(self.output):
                 if '```' in l:
-                    if l == '```fstar':
+                    if l == '```FStar':
                         in_code = True
                     elif l == '```':
                         in_code = False
