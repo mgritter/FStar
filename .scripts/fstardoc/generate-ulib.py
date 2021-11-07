@@ -99,7 +99,7 @@ for s in sources:
 sources.difference_update( errors )
 
 with open( os.path.join( md_base, "index.md" ), "w" ) as index_out:
-    index_out.write( "# F* standard library modules" )
+    index_out.write( "# F* standard library modules\n\n" )
     for s in sorted( sources, key=baseName ):
         n = baseName( s )
         try:
